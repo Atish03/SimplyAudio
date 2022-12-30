@@ -1,0 +1,65 @@
+.player {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+}
+
+.container {
+    position: relative;
+    display: flex;
+    flex-wrap: nowrap;
+    width: 1000px;
+    overflow: hidden;
+}
+
+.container::-webkit-scrollbar {
+    display: none;
+}
+
+.slider {
+    height: 150px;
+    position: relative;
+    width: fit-content;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+}
+
+.wave {
+    display: flex;
+    width: 5px;
+    background-color: rgb(90, 90, 90);
+    border-radius: 2.5px;
+    transition: all 0.05s ease-out;
+}
+
+.wave:hover {
+    background-color: rgb(255, 219, 143);
+}
+
+.marker {
+    position: fixed;
+    left: 50%;
+    height: 150px;
+    width: 1.5px;
+    background-color: red;
+}
+
+.toggle {
+    position: relative;
+    margin: 20px;
+}
+
+.mainBox {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    width: 500px;
+    padding: 50px;
+    border: dashed 3px black;
+    border-radius: 10px;
+}
