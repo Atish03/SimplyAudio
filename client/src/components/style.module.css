@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Sora&family=Varela+Round&display=swap');
+
 .player {
     display: flex;
     align-items: center;
@@ -23,8 +25,12 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 5px;
+    /* gap: 5px; */
     cursor: pointer;
+}
+
+.waveCont:hover .wave {
+    background-color: rgb(255, 219, 143);
 }
 
 .wave {
@@ -33,10 +39,6 @@
     background-color: rgb(90, 90, 90);
     border-radius: 2.5px;
     transition: all 0.05s ease-out;
-}
-
-.wave:hover {
-    background-color: rgb(255, 219, 143);
 }
 
 .marker {
@@ -52,7 +54,29 @@
     margin: 20px;
 }
 
-.mainBox {
+.inpZone {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+.urlBox {
+    padding: 10px;
+    outline: none;
+    border: solid rgb(237, 146, 255) 2px;
+    border-radius: 10px;
+    font-family: 'Varela Round', sans-serif;
+    font-size: 18px;
+    color: rgb(54, 54, 54);
+}
+
+.dropBoxText {
+    font-family: 'Varela Round', sans-serif;
+    font-size: 18px;
+}
+
+.dropBox {
     position: relative;
     display: flex;
     justify-content: center;
@@ -60,6 +84,25 @@
     flex-direction: column;
     width: 500px;
     padding: 50px;
-    border: dashed 3px black;
+    border: dashed 3px rgb(121, 195, 255);
     border-radius: 10px;
+    margin: 0px 20px 20px 20px;
+    background-color: rgba(115, 180, 255, 0.349);
+    color: rgb(78, 78, 78);
+    cursor: pointer;
+}
+
+.subBtn {
+    padding: 10px;
+    font-family: 'Varela Round', sans-serif;
+    font-size: 15px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    background-color: rgb(255, 179, 236);
+    color: rgb(43, 43, 43);
+}
+
+.subBtn:hover {
+    background-color: rgb(253, 159, 230);
 }

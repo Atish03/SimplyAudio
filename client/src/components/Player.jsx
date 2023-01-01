@@ -25,15 +25,34 @@ const sendFile = (file) => {
 const Waveform = ({ amps, toggle, audio, setToggle }) => {
     const [left, setLeft] = useState(500);
     const [limit, setLimit] = useState(0);
+    const [allWaves, setAllWaves] = useState(0);
+    const [time, setTime] = useState(0);
+    const [currTime, setCurrTime] = useState(audio.current.currentTime);
     let currEle = useRef(null);
     var lastFrame = +new Date;
 
+    const handleClick = async(e) => {
+        setToggle("paused");
+        audio.current.pause();
+        var ind = [...allWaves].indexOf(e.target);
+        if (ind == -1) {
+            ind = [...allWaves].indexOf(e.target.parentElement);
+        }
+        setTime(ind * 0.5);
+    }
+
     useEffect(() => {
-        setLimit(-(currEle.current.getBoundingClientRect().width - 500));
+        console.log(time);
+    }, [time])
+
+    useEffect(() => {
+        setAllWaves(document.querySelectorAll(`.${style.waveCont}`));
+    }, [])
+
+    useEffect(() => {
+        setLimit(-(currEle.current.getBoundingClientRect().width - 505));
 
         currEle.current.addEventListener("wheel", (e) => {
-            e.preventDefault();
-
             if (toggle == "playing") {
                 setToggle("paused");
                 audio.current.pause();
@@ -44,9 +63,13 @@ const Waveform = ({ amps, toggle, audio, setToggle }) => {
         })
 
         if (left <= limit) {
+            audio.current.pause();
+            setToggle("paused");
             setLeft(limit);
         }
         if (left >= 500) {
+            audio.current.pause();
+            setToggle("paused");
             setLeft(500);
         }
 
@@ -54,31 +77,25 @@ const Waveform = ({ amps, toggle, audio, setToggle }) => {
 
     useEffect(() => {
         if (toggle == "playing") {
-            audio.current.currentTime = (-left + 505) / 20;
+            audio.current.currentTime = (-left + 500) / 20;
         }
     }, [toggle]);
     
     useEffect(() => {
         if (toggle == "playing") {
             timer = setInterval(() => {
-                if (left >= limit) {
-                    var now = +new Date, deltaT = now - lastFrame;
-                    lastFrame = now;
-                    return setLeft(left - 0.2 * deltaT / 10);
-                }else {
-                    clearInterval(timer);
-                }
+                setLeft(-audio.current.currentTime * 20 + 500);
             }, 10);
         } else {
             clearInterval(timer);
         }
         return () => clearInterval(timer);
-    }, [toggle, limit, left])
+    }, [toggle, left])
 
     return (
-        <div id="custom-slider" className={ style.slider } style={{ transform: `translateX(${left}px)` }} ref={ el => { currEle.current = el } }>
+        <div id="custom-slider" className={ style.slider } style={{ transform: `translateX(${left}px)` }} ref={ el => { currEle.current = el }} onClick={ handleClick }>
             { amps.map((i, ind) =>
-                <div key={ind} className={ style.wave } style={{ height: `${i}px` }}></div>
+                <div key={ind} className={ style.waveCont } style={{ padding: "0px 5px 0px 0px" }}><div className={ style.wave } style={{ height: `${i}px` }}></div></div>
             )}
         </div>
     )
@@ -132,23 +149,9 @@ export default function Player() {
     const [amps, setAmps] = useState([0]);
     const [fileName, setFileName] = useState(file);
 
-    const onDrop = useCallback(async(acceptedFiles) => {
-        const reader = new FileReader();
-        let resp;
-
-        reader.onload = async(e) => {
-            resp = await sendFile(e.target.result);
-            setAmps(resp.amps);
-            setFileName(resp.fileName);
-            setFile(1);
-        }
-
-        reader.readAsDataURL(acceptedFiles[0]);
-    }, []);
-
     return (
         <div className={ style.player }>
-            { file ? <CustomAudio toggle={ toggle } setToggle = { setToggle } amps={ amps } file={ file } /> : <Dropzone onDrop={ onDrop } accept={ "uploads/*" } /> }
+            { file ? <CustomAudio toggle={ toggle } setToggle = { setToggle } amps={ amps } file={ file } /> : <Dropzone setAmps={ setAmps } setFileName={ setFileName } setFile={ setFile } sendFile={ sendFile } accept={ "uploads/*" } /> }
         </div>
         )
 }
