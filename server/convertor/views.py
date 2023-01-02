@@ -11,7 +11,7 @@ import shutil
 import requests
 
 # Create your views here.
-
+os.makedirs("../client/src/uploads", exist_ok = True)
 open("../client/src/uploads/current.wav", "w").write("")
 
 @csrf_exempt

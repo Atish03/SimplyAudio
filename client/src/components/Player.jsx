@@ -22,14 +22,12 @@ const sendFile = (file) => {
 }
 
 
-const Waveform = ({ amps, toggle, audio, setToggle }) => {
+const Waveform = ({ amps, toggle, audio, setToggle, timestamps, setTimestamps }) => {
     const [left, setLeft] = useState(500);
     const [limit, setLimit] = useState(0);
     const [allWaves, setAllWaves] = useState(0);
     const [time, setTime] = useState(0);
-    const [currTime, setCurrTime] = useState(audio.current.currentTime);
     let currEle = useRef(null);
-    var lastFrame = +new Date;
 
     const handleClick = async(e) => {
         setToggle("paused");
@@ -42,26 +40,27 @@ const Waveform = ({ amps, toggle, audio, setToggle }) => {
     }
 
     useEffect(() => {
-        console.log(time);
+        setTimestamps({ ...timestamps, [time]: {} });
     }, [time])
 
     useEffect(() => {
         setAllWaves(document.querySelectorAll(`.${style.waveCont}`));
     }, [])
 
+    const customScroller = (e) => {
+        e.preventDefault();
+        if (toggle == "playing") {
+            setToggle("paused");
+            audio.current.pause();
+        }
+        if (left <= 500 && left >= limit) {
+            setLeft(left - Math.sign(e.deltaX) * 10);
+        }
+    }
+
     useEffect(() => {
         setLimit(-(currEle.current.getBoundingClientRect().width - 505));
-
-        currEle.current.addEventListener("wheel", (e) => {
-            if (toggle == "playing") {
-                setToggle("paused");
-                audio.current.pause();
-            }
-            if (left <= 500 && left >= limit) {
-                setLeft(left - Math.sign(e.deltaX) * 10);
-            }
-        })
-
+        currEle.current.onwheel = customScroller;
         if (left <= limit) {
             audio.current.pause();
             setToggle("paused");
@@ -72,8 +71,7 @@ const Waveform = ({ amps, toggle, audio, setToggle }) => {
             setToggle("paused");
             setLeft(500);
         }
-
-    }, [currEle, left, audio])
+    }, [currEle, left])
 
     useEffect(() => {
         if (toggle == "playing") {
@@ -101,16 +99,16 @@ const Waveform = ({ amps, toggle, audio, setToggle }) => {
     )
 }
 
-const Scroller = ({ amps, toggle, audio, setToggle}) => {
+const Scroller = ({ amps, toggle, audio, setToggle, timestamps, setTimestamps }) => {
     return (
         <div className={ style.container }>
             <span className={ style.marker }></span>
-            <Waveform amps={ amps } toggle={ toggle } audio={ audio } setToggle={ setToggle } />
+            <Waveform amps={ amps } toggle={ toggle } audio={ audio } setToggle={ setToggle } timestamps={ timestamps } setTimestamps={ setTimestamps } />
         </div>
     )
 }
 
-const CustomAudio = ({ file, toggle, setToggle, amps }) => {
+const CustomAudio = ({ file, toggle, setToggle, amps, timestamps, setTimestamps }) => {
     var audio = useRef(new Audio(require("../uploads/current.wav")));
 
     useEffect(() => {
@@ -131,14 +129,42 @@ const CustomAudio = ({ file, toggle, setToggle, amps }) => {
         }
     };
 
+    const handleDelete = (e) => {
+        let allStamp = { ...timestamps }
+        delete allStamp[e.target.parentElement.parentElement.getAttribute("value")];
+        setTimestamps(allStamp);
+    }
+
     return (
         <>
             <div className={ style.container }>
-                { file ? <Scroller amps={ amps } toggle={ toggle } audio={ audio } setToggle={ setToggle } /> : <></> }
+                <Scroller amps={ amps } toggle={ toggle } audio={ audio } setToggle={ setToggle } timestamps={ timestamps } setTimestamps={ setTimestamps } />
             </div>
-            {file ? <div className={ style.toggle } onClick={ updateState }>
-                { toggle == "playing" ? <PauseRoundedIcon sx={{ fontSize: "40px", color: "rgb(90, 90, 90)" }} /> : <PlayArrowRoundedIcon sx={{ fontSize: "40px", color: "rgb(90, 90, 90)" }} /> }
-            </div> : <></> }
+            <div className={ style.toggle } onClick={ updateState }>
+                { toggle == "playing" ? <PauseRoundedIcon sx={{ fontSize: "40px", color: "rgb(90, 90, 90)", cursor: "pointer" }} /> : <PlayArrowRoundedIcon sx={{ fontSize: "40px", color: "rgb(90, 90, 90)", cursor: "pointer" }} /> }
+            </div>
+            <div id="annotations" className={ style.annotations }>
+                <div id="tags-box" className={ style.tagsBox }>
+                    <p>TAGS</p>
+                    <hr style={{ width: "100%" }}></hr>
+                    <div id="tags-container" className={ style.cont }>
+                        { Object.keys(timestamps).map((key, ind) => 
+                            <div key={ ind } value={ key } className={ style.tag }>
+                                <div className={ style.timestamp }>{ new Date(key * 1000).toISOString().slice(11, 19) }</div>
+                                <input placeholder="Enter tag" className={ style.tagInp }></input>
+                                <button className={ style.delBtn }><img onClick={ handleDelete } src="https://cdn-icons-png.flaticon.com/512/3699/3699522.png" width="25px"></img></button>
+                            </div>
+                        ) }
+                    </div>
+                </div>
+                <div id="annotation-box" className={ style.annotationBox }>
+                    <p>ANNOTATIONS</p>
+                    <hr style={{ width: "100%" }}></hr>
+                    <div id="annotation-container" className={ style.cont } style={{ padding: "10px" }}>
+                        <textarea className={ style.annotationArea }></textarea>
+                    </div>
+                </div>
+            </div>
         </>
     )
 }
@@ -148,10 +174,15 @@ export default function Player() {
     const [file, setFile] = useState(0);
     const [amps, setAmps] = useState([0]);
     const [fileName, setFileName] = useState(file);
+    const [timestamps, setTimestamps] = useState({});
+
+    useEffect(() => {
+        console.log(timestamps);
+    }, [timestamps]);
 
     return (
         <div className={ style.player }>
-            { file ? <CustomAudio toggle={ toggle } setToggle = { setToggle } amps={ amps } file={ file } /> : <Dropzone setAmps={ setAmps } setFileName={ setFileName } setFile={ setFile } sendFile={ sendFile } accept={ "uploads/*" } /> }
+            { file ? <CustomAudio toggle={ toggle } setToggle = { setToggle } amps={ amps } file={ file } timestamps={ timestamps } setTimestamps={ setTimestamps } /> : <Dropzone setAmps={ setAmps } setFileName={ setFileName } setFile={ setFile } sendFile={ sendFile } accept={ "uploads/*" } /> }
         </div>
         )
 }
