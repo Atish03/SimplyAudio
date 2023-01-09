@@ -7,19 +7,19 @@ Clone the repository
 
 Go to `server` directory and run
 
-> ```pip install -r requirements.txt```
+```pip install -r requirements.txt```
 
-> then run
+then run
 
-> ```python manage.py runserver```
+```python manage.py runserver```
 
 Then in other shell, Go to `client` directory and run
 
-> ```npm install```
+```npm install```
 
-> then run
+then run
 
-> ```npm start```
+```npm start```
 
 The application should pop-up on the default browser.
 
