@@ -120,8 +120,7 @@
     justify-content: top;
     align-items: top;
     height: 300px;
-    width: 350px;
-    background-image: linear-gradient(180deg, rgb(255, 255, 255), rgb(255, 255, 255));
+    width: 400px;
     border-radius: 10px;
 }
 
@@ -135,7 +134,7 @@
     border-radius: 10px;
 }
 
-.tagsBox p, .annotationBox p {
+.tagsBox p, .annotationBox > p {
     font-size: 20px;
     font-family: 'Varela Round', sans-serif;
     color: rgb(61, 61, 61);
@@ -163,6 +162,8 @@
 .timestamp {
     font-family: 'Varela Round', sans-serif;
     color: rgb(65, 65, 65);
+    position: relative;
+    cursor: pointer;
 }
 
 .tagInp {
@@ -173,6 +174,7 @@
     outline: none;
     font-family: 'Varela Round', sans-serif;
     font-size: 15px;
+    transition: all 0.2s cubic-bezier(0, 0, 0.09, 1.44);
 }
 
 .delBtn img {
@@ -187,11 +189,8 @@
     border: none; outline: none;
     cursor: pointer;
     padding: 0px;
-}
-
-.tagInp:focus + .delBtn { 
-    opacity: 1;
-    pointer-events: all;
+    margin: 5px;
+    width: 20px;
 }
 
 .annotationArea {
@@ -202,8 +201,44 @@
     font-family: 'Varela Round', sans-serif;
     font-size: 15px;
     padding: 10px;
+    padding-top: 30px;
     height: 300px;
     resize: none;
     background-color: rgb(241, 241, 241);
     border: none;
+}
+
+.navBtn {
+    padding: 10px;
+    border: none;
+    font-family: 'Varela Round', sans-serif;
+    font-size: 15px;
+    color: rgb(65, 65, 65);
+    border: solid 2px rgba(91, 161, 252, 0.945);
+    background-color: rgba(128, 186, 252, 0.267);
+    cursor: pointer;
+    border-radius: 5px;
+    transition: all 0.2s cubic-bezier(0, 0, 0.09, 1.44);
+}
+
+.navBtn:hover {
+    transform: translateY(-2px);
+}
+
+.customToolkit {
+    position: absolute;
+    left: -100px;
+    font-size: 13px;
+}
+
+.annoTime {
+    position: absolute;
+    z-index: 10;
+    top: 65px; left: -5px;
+    background-color: white;
+    padding: 5px 10px 5px 10px;
+    border-radius: 99px;
+    box-shadow: 0px 0px 10px rgba(54, 54, 54, 0.137);
+    font-family: 'Varela Round', sans-serif;
+    font-size: 15px;
 }

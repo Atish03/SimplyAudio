@@ -9,6 +9,7 @@ from . import genWave
 import os
 import shutil
 import requests
+import json
 
 # Create your views here.
 os.makedirs("../client/src/uploads", exist_ok = True)
@@ -34,3 +35,14 @@ def index(request):
 
     else:
         return HttpResponse("Nothing to see here ;)")
+
+@csrf_exempt
+def save(request):
+    if request.method == "POST":
+        data = request.body.decode()
+
+        with open("../server/downloads/timestamps.json", "w") as file:
+            json.dump(json.loads(data), file, indent = 4, separators = (",", ": "))
+        file.close()
+
+        return HttpResponse("File saved successfully")

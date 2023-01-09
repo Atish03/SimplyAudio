@@ -22,8 +22,7 @@ const sendFile = (file) => {
 }
 
 
-const Waveform = ({ amps, toggle, audio, setToggle, timestamps, setTimestamps }) => {
-    const [left, setLeft] = useState(500);
+const Waveform = ({ amps, toggle, audio, setToggle, timestamps, setTimestamps, left, setLeft }) => {
     const [limit, setLimit] = useState(0);
     const [allWaves, setAllWaves] = useState(0);
     const [time, setTime] = useState(0);
@@ -33,10 +32,13 @@ const Waveform = ({ amps, toggle, audio, setToggle, timestamps, setTimestamps })
         setToggle("paused");
         audio.current.pause();
         var ind = [...allWaves].indexOf(e.target);
+        var amp = e.target.childNodes[0];
         if (ind == -1) {
             ind = [...allWaves].indexOf(e.target.parentElement);
+            amp = e.target;
         }
         setTime(ind * 0.5);
+        amp.style.backgroundColor = "#b578fa";
     }
 
     useEffect(() => {
@@ -99,17 +101,19 @@ const Waveform = ({ amps, toggle, audio, setToggle, timestamps, setTimestamps })
     )
 }
 
-const Scroller = ({ amps, toggle, audio, setToggle, timestamps, setTimestamps }) => {
+const Scroller = ({ amps, toggle, audio, setToggle, timestamps, setTimestamps, left, setLeft }) => {
     return (
         <div className={ style.container }>
             <span className={ style.marker }></span>
-            <Waveform amps={ amps } toggle={ toggle } audio={ audio } setToggle={ setToggle } timestamps={ timestamps } setTimestamps={ setTimestamps } />
+            <Waveform amps={ amps } toggle={ toggle } audio={ audio } setToggle={ setToggle } timestamps={ timestamps } setTimestamps={ setTimestamps } left={ left } setLeft={ setLeft } />
         </div>
     )
 }
 
-const CustomAudio = ({ file, toggle, setToggle, amps, timestamps, setTimestamps }) => {
+const CustomAudio = ({ file, toggle, setToggle, amps, timestamps, setTimestamps, setFile }) => {
     var audio = useRef(new Audio(require("../uploads/current.wav")));
+    const [left, setLeft] = useState(500);
+    const [selectedTime, setSelectedTime] = useState(0);
 
     useEffect(() => {
         audio.current = new Audio(require("../uploads/current.wav"));
@@ -131,14 +135,61 @@ const CustomAudio = ({ file, toggle, setToggle, amps, timestamps, setTimestamps 
 
     const handleDelete = (e) => {
         let allStamp = { ...timestamps }
-        delete allStamp[e.target.parentElement.parentElement.getAttribute("value")];
+        var ts = e.target.parentElement.parentElement.getAttribute("value");
+        if (new Date(ts * 1000).toISOString().slice(11, 19) == selectedTime) {
+            setSelectedTime("No time selected");
+        }
+        document.getElementById("custom-slider").childNodes[ts * 2].childNodes[0].style.backgroundColor = "rgb(90, 90, 90)";
+        delete allStamp[ts];
         setTimestamps(allStamp);
+    }
+
+    const handleUpload = () => {
+        setFile(0);
+        audio.current.pause();
+    }
+
+    const slideToCurrent = (e) => {
+        setToggle("paused");
+        audio.current.pause();
+        setLeft(-e.target.parentElement.getAttribute("value") * 20 + 500);
+    }
+
+    const handleAddAnnotation = (e) => {
+        var val = e.target.parentElement.parentElement.getAttribute("value");
+        document.getElementById("annotationPlace").value = "";
+        setSelectedTime(val)
+    }
+
+    const addTag = (e) => {
+        let allStamp = { ...timestamps }
+        allStamp[e.target.parentElement.getAttribute("value")]["tag"] = e.target.value;
+        setTimestamps(allStamp)
+    }
+
+    const addAnnotation = (e) => {
+        let allStamp = { ...timestamps }
+        let key = e.target.parentElement.getAttribute("value")
+        allStamp[key]["annotation"] = e.target.value;
+        setTimestamps(allStamp)
+    }
+
+    const handleExport = () => {
+        fetch("http://localhost:8000/convert/save/", {
+            method: "POST",
+            body: JSON.stringify(timestamps),
+            headers: {
+                'Content-Type': 'application/json'
+            },
+        }).then((resp) => {
+            console.log(resp)
+        })
     }
 
     return (
         <>
             <div className={ style.container }>
-                <Scroller amps={ amps } toggle={ toggle } audio={ audio } setToggle={ setToggle } timestamps={ timestamps } setTimestamps={ setTimestamps } />
+                <Scroller amps={ amps } toggle={ toggle } audio={ audio } setToggle={ setToggle } timestamps={ timestamps } setTimestamps={ setTimestamps } left={ left } setLeft= { setLeft } />
             </div>
             <div className={ style.toggle } onClick={ updateState }>
                 { toggle == "playing" ? <PauseRoundedIcon sx={{ fontSize: "40px", color: "rgb(90, 90, 90)", cursor: "pointer" }} /> : <PlayArrowRoundedIcon sx={{ fontSize: "40px", color: "rgb(90, 90, 90)", cursor: "pointer" }} /> }
@@ -146,24 +197,30 @@ const CustomAudio = ({ file, toggle, setToggle, amps, timestamps, setTimestamps 
             <div id="annotations" className={ style.annotations }>
                 <div id="tags-box" className={ style.tagsBox }>
                     <p>TAGS</p>
-                    <hr style={{ width: "100%" }}></hr>
+                    <hr style={{ width: "95%" }}></hr>
                     <div id="tags-container" className={ style.cont }>
                         { Object.keys(timestamps).map((key, ind) => 
                             <div key={ ind } value={ key } className={ style.tag }>
-                                <div className={ style.timestamp }>{ new Date(key * 1000).toISOString().slice(11, 19) }</div>
-                                <input placeholder="Enter tag" className={ style.tagInp }></input>
-                                <button className={ style.delBtn }><img onClick={ handleDelete } src="https://cdn-icons-png.flaticon.com/512/3699/3699522.png" width="25px"></img></button>
+                                <div onClick={ slideToCurrent } className={ style.timestamp }>{ new Date(key * 1000).toISOString().slice(11, 19) }</div>
+                                <input placeholder="Enter tag" className={ style.tagInp } onChange={ addTag }></input>
+                                <button className={ style.delBtn }><img onClick={ handleDelete } src="https://cdn-icons-png.flaticon.com/128/1632/1632602.png" width="25px"></img></button>
+                                <button className={ style.delBtn }><img onClick={ handleAddAnnotation } src="https://cdn-icons-png.flaticon.com/512/752/752326.png" width="25px"></img></button>
                             </div>
                         ) }
                     </div>
                 </div>
                 <div id="annotation-box" className={ style.annotationBox }>
                     <p>ANNOTATIONS</p>
-                    <hr style={{ width: "100%" }}></hr>
-                    <div id="annotation-container" className={ style.cont } style={{ padding: "10px" }}>
-                        <textarea className={ style.annotationArea }></textarea>
+                    <hr style={{ width: "95%" }}></hr>
+                    <div id="annotation-container" value={ selectedTime } className={ style.cont } style={{ padding: "10px 10px 10px 10px" }}>
+                        <p className={ style.annoTime }>{ new Date(selectedTime * 1000).toISOString().slice(11, 19) }</p>
+                        <textarea id="annotationPlace" className={ style.annotationArea } onChange={ addAnnotation }></textarea>
                     </div>
                 </div>
+            </div>
+            <div style={{ display: "flex", gap: "20px" }}>
+                <button onClick={ handleExport } className={ style.navBtn }>Export</button>
+                <button onClick={ handleUpload } className={ style.navBtn }>Upload</button>
             </div>
         </>
     )
@@ -176,13 +233,9 @@ export default function Player() {
     const [fileName, setFileName] = useState(file);
     const [timestamps, setTimestamps] = useState({});
 
-    useEffect(() => {
-        console.log(timestamps);
-    }, [timestamps]);
-
     return (
         <div className={ style.player }>
-            { file ? <CustomAudio toggle={ toggle } setToggle = { setToggle } amps={ amps } file={ file } timestamps={ timestamps } setTimestamps={ setTimestamps } /> : <Dropzone setAmps={ setAmps } setFileName={ setFileName } setFile={ setFile } sendFile={ sendFile } accept={ "uploads/*" } /> }
+            { file ? <CustomAudio toggle={ toggle } setToggle = { setToggle } amps={ amps } file={ file } timestamps={ timestamps } setTimestamps={ setTimestamps } setFile={ setFile } /> : <Dropzone setAmps={ setAmps } setFileName={ setFileName } setFile={ setFile } sendFile={ sendFile } accept={ "uploads/*" } /> }
         </div>
         )
 }
