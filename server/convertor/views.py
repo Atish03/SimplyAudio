@@ -10,39 +10,46 @@ import os
 import shutil
 import requests
 import json
+from pymongo import MongoClient
+import hashlib
 
 # Create your views here.
-os.makedirs("../client/src/uploads", exist_ok = True)
-open("../client/src/uploads/current.wav", "w").write("")
+
+client = MongoClient( host = "localhost",
+                      port = 27017 )
+
+db_handle = client['simplyaudio']
+file_collection = db_handle["files"]
+
+save_path = "../streamer/uploads/"
 
 @csrf_exempt
 def index(request):
     amps = [0]
     if request.method == "POST":
         data = request.body
-        tmpName = int(time.mktime(datetime.datetime.now().timetuple()))
+        os.makedirs(save_path, exist_ok = True)
 
-        os.makedirs("./uploads", exist_ok = True)
+        byteData = base64.b64decode(b",".join(data[1:-1].split(b',')[1:]))
+        fileHash = hashlib.md5(byteData).hexdigest()
 
-        open(f"./uploads/{tmpName}", "wb").write(base64.b64decode(b",".join(data[1:-1].split(b',')[1:])))
+        exists = file_collection.find_one({ "file_hash": fileHash })
 
-        subprocess.run(["ffmpeg", "-i", f"./uploads/{tmpName}", "-ab", "1000k", "-vn", f"./uploads/{tmpName}.wav"])
-        shutil.copyfile(f"./uploads/{tmpName}.wav", "../client/src/uploads/current.wav")
-        os.remove(f"./uploads/{tmpName}")
-        amps = genWave.getWave(f"./uploads/{tmpName}.wav")
+        if not exists:
+            tmpName = int(time.mktime(datetime.datetime.now().timetuple()))
+
+            open(f"{save_path}{tmpName}", "wb").write(byteData)
+
+            subprocess.run(["ffmpeg", "-i", f"{save_path}{tmpName}", "-ab", "1000k", "-vn", f"{save_path}{tmpName}.wav"])
+            os.remove(f"{save_path}{tmpName}")
+            amps = genWave.getWave(f"{save_path}{tmpName}.wav")
+
+            file_collection.insert_one({ "file_name": tmpName, "file_hash": fileHash, "amps": amps })
+        else:
+            tmpName = exists["file_name"]
+            amps = exists["amps"]
 
         return HttpResponse(json.dumps({ "amps": amps, "fileName": f"{tmpName}.wav" }), content_type = "application/json")
 
     else:
         return HttpResponse("Nothing to see here ;)")
-
-@csrf_exempt
-def save(request):
-    if request.method == "POST":
-        data = request.body.decode()
-
-        with open("../server/downloads/timestamps.json", "w") as file:
-            json.dump(json.loads(data), file, indent = 4, separators = (",", ": "))
-        file.close()
-
-        return HttpResponse("File saved successfully")

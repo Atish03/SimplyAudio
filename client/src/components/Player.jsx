@@ -110,18 +110,14 @@ const Scroller = ({ amps, toggle, audio, setToggle, timestamps, setTimestamps, l
     )
 }
 
-const CustomAudio = ({ file, toggle, setToggle, amps, timestamps, setTimestamps, setFile }) => {
-    var audio = useRef(new Audio(require("../uploads/current.wav")));
+const CustomAudio = ({ file, toggle, setToggle, amps, timestamps, setTimestamps, setFile, fileName }) => {
+    const [audio, setAudio] = useState(useRef(new Audio(`http://localhost:1337/media/${fileName}`)));
     const [left, setLeft] = useState(500);
-    const [selectedTime, setSelectedTime] = useState(0);
-
-    useEffect(() => {
-        audio.current = new Audio(require("../uploads/current.wav"));
-    }, [file]);
+    const [selectedTime, setSelectedTime] = useState(false);
 
     useEffect(() => {
         audio.current.load();
-    }, [audio])
+    }, [])
 
     const updateState = () => {
         if (toggle == "paused") {
@@ -136,10 +132,10 @@ const CustomAudio = ({ file, toggle, setToggle, amps, timestamps, setTimestamps,
     const handleDelete = (e) => {
         let allStamp = { ...timestamps }
         var ts = e.target.parentElement.parentElement.getAttribute("value");
-        if (new Date(ts * 1000).toISOString().slice(11, 19) == selectedTime) {
-            setSelectedTime("No time selected");
+        if (ts == selectedTime) {
+            setSelectedTime(false);
         }
-        document.getElementById("custom-slider").childNodes[ts * 2].childNodes[0].style.backgroundColor = "rgb(90, 90, 90)";
+        document.getElementById("custom-slider").childNodes[ts * 2].childNodes[0].style.backgroundColor = "";
         delete allStamp[ts];
         setTimestamps(allStamp);
     }
@@ -175,15 +171,12 @@ const CustomAudio = ({ file, toggle, setToggle, amps, timestamps, setTimestamps,
     }
 
     const handleExport = () => {
-        fetch("http://localhost:8000/convert/save/", {
-            method: "POST",
-            body: JSON.stringify(timestamps),
-            headers: {
-                'Content-Type': 'application/json'
-            },
-        }).then((resp) => {
-            console.log(resp)
-        })
+        var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(timestamps));
+        const anchor = document.createElement('a');
+        anchor.href = dataStr;
+        anchor.download = "timestamps.json";
+        document.body.appendChild(anchor);
+        anchor.click();
     }
 
     return (
@@ -213,13 +206,13 @@ const CustomAudio = ({ file, toggle, setToggle, amps, timestamps, setTimestamps,
                     <p>ANNOTATIONS</p>
                     <hr style={{ width: "95%" }}></hr>
                     <div id="annotation-container" value={ selectedTime } className={ style.cont } style={{ padding: "10px 10px 10px 10px" }}>
-                        <p className={ style.annoTime }>{ new Date(selectedTime * 1000).toISOString().slice(11, 19) }</p>
+                        <p className={ style.annoTime }>{ selectedTime ? new Date(selectedTime * 1000).toISOString().slice(11, 19) : "No time selected" }</p>
                         <textarea id="annotationPlace" className={ style.annotationArea } onChange={ addAnnotation }></textarea>
                     </div>
                 </div>
             </div>
             <div style={{ display: "flex", gap: "20px" }}>
-                <button onClick={ handleExport } className={ style.navBtn }>Export</button>
+                <button onClick={ handleExport } id="exportBtn" className={ style.navBtn }>Export</button>
                 <button onClick={ handleUpload } className={ style.navBtn }>Upload</button>
             </div>
         </>
@@ -235,7 +228,7 @@ export default function Player() {
 
     return (
         <div className={ style.player }>
-            { file ? <CustomAudio toggle={ toggle } setToggle = { setToggle } amps={ amps } file={ file } timestamps={ timestamps } setTimestamps={ setTimestamps } setFile={ setFile } /> : <Dropzone setAmps={ setAmps } setFileName={ setFileName } setFile={ setFile } sendFile={ sendFile } accept={ "uploads/*" } /> }
+            { file ? <CustomAudio toggle={ toggle } setToggle = { setToggle } amps={ amps } file={ file } timestamps={ timestamps } setTimestamps={ setTimestamps } setFile={ setFile } fileName={ fileName } /> : <Dropzone setAmps={ setAmps } setFileName={ setFileName } setFile={ setFile } sendFile={ sendFile } accept={ "uploads/*" } /> }
         </div>
         )
 }
