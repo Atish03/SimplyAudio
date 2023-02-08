@@ -15,8 +15,7 @@ import hashlib
 
 # Create your views here.
 
-client = MongoClient( host = "localhost",
-                      port = 27017 )
+client = MongoClient( host = "localhost", port = 27017 )
 
 db_handle = client['simplyaudio']
 file_collection = db_handle["files"]

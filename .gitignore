@@ -1,3 +1,8 @@
 client/node_modules
+client/public
+client/src
+client/package-lock.json
+client/package.json
 server/uploads
 streamer/node_modules
+streamer/uploads

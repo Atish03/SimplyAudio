@@ -1,5 +1,6 @@
 import { useDropzone } from "react-dropzone";
 import style from "./style.module.css";
+import thisOrThat from "../assets/this-or-that.png";
 
 export default function Dropzone({ onDrop, accept, open, setFile, setAmps, setFileName, sendFile }) {
   const { getRootProps, getInputProps, isDragActive, acceptedFiles } = useDropzone({ accept, onDrop });
@@ -21,7 +22,7 @@ export default function Dropzone({ onDrop, accept, open, setFile, setAmps, setFi
   return (
     <div className={ style.inpZone }>
       <input placeholder="Enter URL to video" className={ style.urlBox }></input>
-      <img src="https://www.playmeo.com/wp-content/uploads/2017/09/0356_this-or-that_PNG.png" height="70px" style={{ margin: "20px" }}></img>
+      <img src={ thisOrThat } height="70px" style={{ margin: "20px" }}></img>
       <div {...getRootProps({ className: `dropzone ${style.dropBox}` })}>
         <input className="input-zone" {...getInputProps()} />
         <div className={ `text-center` }>
