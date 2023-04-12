@@ -1,9 +1,11 @@
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef } from "react";
 import style from "./style.module.css";
 import PlayArrowRoundedIcon from '@mui/icons-material/PlayArrowRounded';
 import PauseRoundedIcon from '@mui/icons-material/PauseRounded';
 import Dropzone from "./Dropzone";
+import Cookies from "universal-cookie";
 
+const cookies = new Cookies();
 
 var timer = null;
 
@@ -225,10 +227,28 @@ export default function Player() {
     const [amps, setAmps] = useState([0]);
     const [fileName, setFileName] = useState(file);
     const [timestamps, setTimestamps] = useState({});
+    const [isAuthorized, setIsAuthorized] = useState(false);
+
+    useEffect(() => {
+        fetch("http://localhost:8000/api/verify/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                'X-CSRFToken': cookies.get("csrftoken"),
+            },
+            credentials: "same-origin",
+            body: JSON.stringify({ token: cookies.get("session_") })
+        }).then((resp) => {
+            return resp.json()
+        }).then((jsonResp) => {
+            setIsAuthorized(jsonResp.msg)
+        })
+    }, [])
 
     return (
+        isAuthorized ?
         <div className={ style.player }>
             { file ? <CustomAudio toggle={ toggle } setToggle = { setToggle } amps={ amps } file={ file } timestamps={ timestamps } setTimestamps={ setTimestamps } setFile={ setFile } fileName={ fileName } /> : <Dropzone setAmps={ setAmps } setFileName={ setFileName } setFile={ setFile } sendFile={ sendFile } accept={ "uploads/*" } /> }
-        </div>
+        </div> : <div> Not Authorized </div>
         )
 }
