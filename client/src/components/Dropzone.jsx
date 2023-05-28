@@ -1,6 +1,10 @@
 import { useDropzone } from "react-dropzone";
 import style from "./style.module.css";
 import thisOrThat from "../assets/this-or-that.png";
+import Cookies from "universal-cookie";
+import Library from "./Library";
+
+const cookies = new Cookies();
 
 export default function Dropzone({ onDrop, accept, open, setFile, setAmps, setFileName, sendFile }) {
   const { getRootProps, getInputProps, isDragActive, acceptedFiles } = useDropzone({ accept, onDrop });
@@ -10,7 +14,7 @@ export default function Dropzone({ onDrop, accept, open, setFile, setAmps, setFi
     let resp;
 
     reader.onload = async(e) => {
-        resp = await sendFile(e.target.result);
+        resp = await sendFile(e.target.result, acceptedFiles[acceptedFiles.length - 1].path, cookies.get("session_"));
         setAmps(resp.amps);
         setFileName(resp.fileName);
         setFile(1);
@@ -20,6 +24,7 @@ export default function Dropzone({ onDrop, accept, open, setFile, setAmps, setFi
   }
 
   return (
+    <>
     <div className={ style.inpZone }>
       <input placeholder="Enter URL to video" className={ style.urlBox }></input>
       <img src={ thisOrThat } height="70px" style={{ margin: "20px" }}></img>
@@ -35,12 +40,10 @@ export default function Dropzone({ onDrop, accept, open, setFile, setAmps, setFi
               Drop some files here, or click to select files
             </p>
           )}</>) : <p className={ `dropzone-content ${ style.dropBoxText }` }>{ acceptedFiles[acceptedFiles.length - 1].path }</p> }
-          {/* <button type="button" onClick={ open } className="btn">
-            Select files
-          </button> */}
         </div>
       </div>
       <button onClick={ handleSubmit } className={ style.subBtn }>Dive in</button>
     </div>
+    </>
   );
 }

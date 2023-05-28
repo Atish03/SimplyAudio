@@ -4,16 +4,17 @@ import PlayArrowRoundedIcon from '@mui/icons-material/PlayArrowRounded';
 import PauseRoundedIcon from '@mui/icons-material/PauseRounded';
 import Dropzone from "./Dropzone";
 import Cookies from "universal-cookie";
+import Library from "./Library";
 
 const cookies = new Cookies();
 
 var timer = null;
 
-const sendFile = (file) => {
+const sendFile = (file, name, token) => {
     return new Promise(async(resolve, reject) => {
-        const resp = await fetch("http://localhost:8000/convert/", {
+        const resp = await fetch("/api/convert/", {
             method: "POST",
-            body: JSON.stringify(file),
+            body: JSON.stringify({ "content": file, "fileName": name, "token": token }),
             headers: {
                 'Content-Type': 'application/json'
             },
@@ -35,12 +36,14 @@ const Waveform = ({ amps, toggle, audio, setToggle, timestamps, setTimestamps, l
         audio.current.pause();
         var ind = [...allWaves].indexOf(e.target);
         var amp = e.target.childNodes[0];
-        if (ind == -1) {
+        if (ind === -1) {
             ind = [...allWaves].indexOf(e.target.parentElement);
             amp = e.target;
         }
-        setTime(ind * 0.5);
-        amp.style.backgroundColor = "#b578fa";
+        if (ind !== -1) {
+            setTime(ind * 0.5);
+            amp.style.backgroundColor = "#b578fa";
+        }
     }
 
     useEffect(() => {
@@ -53,7 +56,7 @@ const Waveform = ({ amps, toggle, audio, setToggle, timestamps, setTimestamps, l
 
     const customScroller = (e) => {
         e.preventDefault();
-        if (toggle == "playing") {
+        if (toggle === "playing") {
             setToggle("paused");
             audio.current.pause();
         }
@@ -78,13 +81,13 @@ const Waveform = ({ amps, toggle, audio, setToggle, timestamps, setTimestamps, l
     }, [currEle, left])
 
     useEffect(() => {
-        if (toggle == "playing") {
+        if (toggle === "playing") {
             audio.current.currentTime = (-left + 500) / 20;
         }
     }, [toggle]);
     
     useEffect(() => {
-        if (toggle == "playing") {
+        if (toggle === "playing") {
             timer = setInterval(() => {
                 setLeft(-audio.current.currentTime * 20 + 500);
             }, 10);
@@ -113,19 +116,20 @@ const Scroller = ({ amps, toggle, audio, setToggle, timestamps, setTimestamps, l
 }
 
 const CustomAudio = ({ file, toggle, setToggle, amps, timestamps, setTimestamps, setFile, fileName }) => {
-    const [audio, setAudio] = useState(useRef(new Audio(`http://localhost:1337/media/${fileName}`)));
+    const [audio, setAudio] = useState(useRef(new Audio(`/media/${fileName}`)));
     const [left, setLeft] = useState(500);
     const [selectedTime, setSelectedTime] = useState(false);
 
     useEffect(() => {
         audio.current.load();
+        setTimestamps({});
     }, [])
 
     const updateState = () => {
-        if (toggle == "paused") {
+        if (toggle === "paused") {
             audio.current.play();
             setToggle("playing");
-        }else if (toggle == "playing") {
+        }else if (toggle === "playing") {
             audio.current.pause();
             setToggle("paused");
         }
@@ -134,7 +138,7 @@ const CustomAudio = ({ file, toggle, setToggle, amps, timestamps, setTimestamps,
     const handleDelete = (e) => {
         let allStamp = { ...timestamps }
         var ts = e.target.parentElement.parentElement.getAttribute("value");
-        if (ts == selectedTime) {
+        if (ts === selectedTime) {
             setSelectedTime(false);
         }
         document.getElementById("custom-slider").childNodes[ts * 2].childNodes[0].style.backgroundColor = "";
@@ -148,20 +152,25 @@ const CustomAudio = ({ file, toggle, setToggle, amps, timestamps, setTimestamps,
     }
 
     const slideToCurrent = (e) => {
+        let allStamp = { ...timestamps };
+        var val = e.target.parentElement.parentElement.getAttribute("value");
         setToggle("paused");
         audio.current.pause();
         setLeft(-e.target.parentElement.getAttribute("value") * 20 + 500);
+        document.getElementById("annotationPlace").value = allStamp[val]["annotation"]
     }
 
     const handleAddAnnotation = (e) => {
+        let allStamp = { ...timestamps }
         var val = e.target.parentElement.parentElement.getAttribute("value");
-        document.getElementById("annotationPlace").value = "";
+        document.getElementById("annotationPlace").value = allStamp[val]["annotation"];
         setSelectedTime(val)
     }
 
     const addTag = (e) => {
         let allStamp = { ...timestamps }
         allStamp[e.target.parentElement.getAttribute("value")]["tag"] = e.target.value;
+        allStamp[e.target.parentElement.getAttribute("value")]["annotation"] = "";
         setTimestamps(allStamp)
     }
 
@@ -187,7 +196,7 @@ const CustomAudio = ({ file, toggle, setToggle, amps, timestamps, setTimestamps,
                 <Scroller amps={ amps } toggle={ toggle } audio={ audio } setToggle={ setToggle } timestamps={ timestamps } setTimestamps={ setTimestamps } left={ left } setLeft= { setLeft } />
             </div>
             <div className={ style.toggle } onClick={ updateState }>
-                { toggle == "playing" ? <PauseRoundedIcon sx={{ fontSize: "40px", color: "rgb(90, 90, 90)", cursor: "pointer" }} /> : <PlayArrowRoundedIcon sx={{ fontSize: "40px", color: "rgb(90, 90, 90)", cursor: "pointer" }} /> }
+                { toggle === "playing" ? <PauseRoundedIcon sx={{ fontSize: "40px", color: "rgb(90, 90, 90)", cursor: "pointer" }} /> : <PlayArrowRoundedIcon sx={{ fontSize: "40px", color: "rgb(90, 90, 90)", cursor: "pointer" }} /> }
             </div>
             <div id="annotations" className={ style.annotations }>
                 <div id="tags-box" className={ style.tagsBox }>
@@ -230,13 +239,12 @@ export default function Player() {
     const [isAuthorized, setIsAuthorized] = useState(false);
 
     useEffect(() => {
-        fetch("http://localhost:8000/api/verify/", {
+        fetch("/api/verify/", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                'X-CSRFToken': cookies.get("csrftoken"),
             },
-            credentials: "same-origin",
+            credentials: "omit",
             body: JSON.stringify({ token: cookies.get("session_") })
         }).then((resp) => {
             return resp.json()
@@ -246,9 +254,12 @@ export default function Player() {
     }, [])
 
     return (
-        isAuthorized ?
+        <>
+        <Library isSet={ file }></Library>
+        { isAuthorized ?
         <div className={ style.player }>
-            { file ? <CustomAudio toggle={ toggle } setToggle = { setToggle } amps={ amps } file={ file } timestamps={ timestamps } setTimestamps={ setTimestamps } setFile={ setFile } fileName={ fileName } /> : <Dropzone setAmps={ setAmps } setFileName={ setFileName } setFile={ setFile } sendFile={ sendFile } accept={ "uploads/*" } /> }
-        </div> : <div> Not Authorized </div>
+            { file ? <CustomAudio toggle={ toggle } setToggle={ setToggle } amps={ amps } file={ file } timestamps={ timestamps } setTimestamps={ setTimestamps } setFile={ setFile } fileName={ fileName } /> : <Dropzone setAmps={ setAmps } setFileName={ setFileName } setFile={ setFile } sendFile={ sendFile } accept={ "uploads/*" } /> }
+        </div> : <div> Not Authorized </div> }
+        </>
         )
 }

@@ -12,13 +12,16 @@ import requests
 import json
 from pymongo import MongoClient
 import hashlib
+from server import auth
+from bson.objectid import ObjectId
 
 # Create your views here.
 
-client = MongoClient( host = "localhost", port = 27017 )
+client = MongoClient( host = "mongo", port = 27017 )
 
 db_handle = client['simplyaudio']
 file_collection = db_handle["files"]
+user_collection = db_handle["users"]
 
 save_path = "../streamer/uploads/"
 
@@ -26,13 +29,26 @@ save_path = "../streamer/uploads/"
 def index(request):
     amps = [0]
     if request.method == "POST":
-        data = request.body
+        post_data = json.loads(request.body)
+        data = post_data["content"]
+        original_file_name = post_data["fileName"]
+        token = post_data["token"]
+
+        user = auth.verifyToken(token)
+
         os.makedirs(save_path, exist_ok = True)
 
-        byteData = base64.b64decode(b",".join(data[1:-1].split(b',')[1:]))
+        byteData = base64.b64decode(",".join(data.split(',')[1:]))
         fileHash = hashlib.md5(byteData).hexdigest()
 
         exists = file_collection.find_one({ "file_hash": fileHash })
+
+        if user:
+            current_user = user_collection.find_one({ "_id": ObjectId(user["_id"]) })
+            current_user["library"][fileHash] = original_file_name
+            user_collection.update_one({ "_id": ObjectId(user["_id"]) }, { "$set": { "library": current_user["library"] }})
+        else: 
+            return HttpResponse(json.dumps({ "msg": "please logout and login again" }))
 
         if not exists:
             tmpName = int(time.mktime(datetime.datetime.now().timetuple()))
@@ -43,8 +59,11 @@ def index(request):
             os.remove(f"{save_path}{tmpName}")
             amps = genWave.getWave(f"{save_path}{tmpName}.wav")
 
-            file_collection.insert_one({ "file_name": tmpName, "file_hash": fileHash, "amps": amps })
+            file_collection.insert_one({ "file_name": tmpName, "file_hash": fileHash, "amps": amps, "alternate_names": [original_file_name] })
         else:
+            alt_names = exists["alternate_names"]
+            alt_names.append(original_file_name)
+            file_collection.update_one({ "file_hash": fileHash }, { "$set": { "alternate_names": list(set(alt_names)) } })
             tmpName = exists["file_name"]
             amps = exists["amps"]
 

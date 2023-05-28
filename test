@@ -1,0 +1,21 @@
+server {
+    listen 3002;
+    listen [::]:3002;
+
+    server_name test;
+        
+    location /api {
+        proxy_pass http://localhost:8000/api;
+        include proxy_params;
+    }
+    
+    location / {
+	proxy_pass http://localhost:3000;
+	include proxy_params;	
+    }
+    
+    location /media {
+	proxy_pass http://localhost:1337;
+	include proxy_params;
+    }
+}

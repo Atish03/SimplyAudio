@@ -1,0 +1,10 @@
+services:
+  mongo:
+    image: mongo:latest
+    
+  application:
+    build: .
+    ports:
+      - "3002:3002"
+    depends_on:
+      - mongo

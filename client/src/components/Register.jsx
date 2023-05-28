@@ -10,7 +10,7 @@ const registerUser = () => {
     const body = { username: document.getElementsByName("username")[0].value, password: document.getElementsByName("password")[0].value };
 
     return new Promise(async(resolve, reject) => {
-        const resp = await fetch("http://localhost:8000/api/register/", {
+        const resp = await fetch("/api/register/", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -20,7 +20,7 @@ const registerUser = () => {
             body: JSON.stringify(body),
         })
         const jsonData = await resp.json();
-        if (jsonData.msg == "success") {
+        if (jsonData.msg === "success") {
             cookies.set("session_", jsonData.token)
             window.location.href = "/player";
             resolve();

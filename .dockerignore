@@ -1,5 +1,4 @@
 client/node_modules
-server/uploads
 streamer/node_modules
 streamer/uploads
 serve_client/node_modules
