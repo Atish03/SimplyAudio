@@ -5,6 +5,8 @@ import PauseRoundedIcon from '@mui/icons-material/PauseRounded';
 import Dropzone from "./Dropzone";
 import Cookies from "universal-cookie";
 import Library from "./Library";
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const cookies = new Cookies();
 
@@ -61,7 +63,7 @@ const Waveform = ({ amps, toggle, audio, setToggle, timestamps, setTimestamps, l
             audio.current.pause();
         }
         if (left <= 500 && left >= limit) {
-            setLeft(left - Math.sign(e.deltaX) * 10);
+            setLeft(left - Math.sign(e.deltaY) * 10);
         }
     }
 
@@ -100,7 +102,7 @@ const Waveform = ({ amps, toggle, audio, setToggle, timestamps, setTimestamps, l
     return (
         <div id="custom-slider" className={ style.slider } style={{ transform: `translateX(${left}px)` }} ref={ el => { currEle.current = el }} onClick={ handleClick }>
             { amps.map((i, ind) =>
-                <div key={ind} className={ style.waveCont } style={{ padding: "0px 5px 0px 0px" }}><div className={ style.wave } style={{ height: `${i}px` }}></div></div>
+                <div key={ind} className={ style.waveCont } style={{ padding: "0px 5px 0px 0px" }}><div className={ style.wave } style={{ height: `${i}px`, backgroundColor: timestamps[ind / 2] ? "#b578fa" : "" }}></div></div>
             )}
         </div>
     )
@@ -177,17 +179,41 @@ const CustomAudio = ({ file, toggle, setToggle, amps, timestamps, setTimestamps,
     const addAnnotation = (e) => {
         let allStamp = { ...timestamps }
         let key = e.target.parentElement.getAttribute("value")
-        allStamp[key]["annotation"] = e.target.value;
-        setTimestamps(allStamp)
+        if (allStamp[key] != undefined) {
+            allStamp[key]["annotation"] = document.getElementById("annotationPlace").value;
+            setTimestamps(allStamp);
+            toast.success("Done!");
+        } else {
+            toast.error("Please select the time first!")
+        }
     }
 
     const handleExport = () => {
         var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(timestamps));
         const anchor = document.createElement('a');
         anchor.href = dataStr;
-        anchor.download = "timestamps.json";
+        anchor.download = "timestamps_"+ fileName +".json";
         document.body.appendChild(anchor);
         anchor.click();
+    }
+
+    const handleImport = (e) => {
+        const f = e.target.files[0];
+
+        if (f) {
+            var reader = new FileReader();
+            reader.readAsText(f, "UTF-8");
+            reader.onload = (evt) => {
+                try {
+                    setTimestamps(JSON.parse(evt.target.result));
+                } catch (e) {
+                    toast.error("Not a valid JSON file");
+                }
+            }
+            reader.onerror = () => {
+                toast.error("Unable to open file");
+            }
+        }
     }
 
     return (
@@ -206,7 +232,7 @@ const CustomAudio = ({ file, toggle, setToggle, amps, timestamps, setTimestamps,
                         { Object.keys(timestamps).map((key, ind) => 
                             <div key={ ind } value={ key } className={ style.tag }>
                                 <div onClick={ slideToCurrent } className={ style.timestamp }>{ new Date(key * 1000).toISOString().slice(11, 19) }</div>
-                                <input placeholder="Enter tag" className={ style.tagInp } onChange={ addTag }></input>
+                                <input value={ timestamps[key].tag } placeholder="Enter tag" className={ style.tagInp } onChange={ addTag }></input>
                                 <button className={ style.delBtn }><img onClick={ handleDelete } src="https://cdn-icons-png.flaticon.com/128/1632/1632602.png" width="25px"></img></button>
                                 <button className={ style.delBtn }><img onClick={ handleAddAnnotation } src="https://cdn-icons-png.flaticon.com/512/752/752326.png" width="25px"></img></button>
                             </div>
@@ -218,13 +244,16 @@ const CustomAudio = ({ file, toggle, setToggle, amps, timestamps, setTimestamps,
                     <hr style={{ width: "95%" }}></hr>
                     <div id="annotation-container" value={ selectedTime } className={ style.cont } style={{ padding: "10px 10px 10px 10px" }}>
                         <p className={ style.annoTime }>{ selectedTime ? new Date(selectedTime * 1000).toISOString().slice(11, 19) : "No time selected" }</p>
-                        <textarea id="annotationPlace" className={ style.annotationArea } onChange={ addAnnotation }></textarea>
+                        <textarea value={ timestamps[selectedTime] ? timestamps[selectedTime].annotation : "" } id="annotationPlace" className={ style.annotationArea }></textarea>
+                        <button className={ style.putAnnotation } onClick={ addAnnotation }>Save Tag & Annotation</button>
                     </div>
                 </div>
             </div>
             <div style={{ display: "flex", gap: "20px" }}>
-                <button onClick={ handleExport } id="exportBtn" className={ style.navBtn }>Export</button>
-                <button onClick={ handleUpload } className={ style.navBtn }>Upload</button>
+                <button onClick={ handleExport } id="exportBtn" className={ style.navBtn }>Export JSON</button>
+                <button onClick={ handleUpload } className={ style.navBtn }>Load another</button>
+                <input onChange={ handleImport } type="file" id="selectedFile" style={{ display: "none" }}></input>
+                <button onClick={ () => { document.getElementById("selectedFile").click(); } } className={ style.navBtn }>Import JSON</button>
             </div>
         </>
     )
@@ -255,10 +284,10 @@ export default function Player() {
 
     return (
         <>
-        <Library isSet={ file }></Library>
+        <ToastContainer></ToastContainer>
         { isAuthorized ?
         <div className={ style.player }>
-            { file ? <CustomAudio toggle={ toggle } setToggle={ setToggle } amps={ amps } file={ file } timestamps={ timestamps } setTimestamps={ setTimestamps } setFile={ setFile } fileName={ fileName } /> : <Dropzone setAmps={ setAmps } setFileName={ setFileName } setFile={ setFile } sendFile={ sendFile } accept={ "uploads/*" } /> }
+            { file ? <CustomAudio toggle={ toggle } setToggle={ setToggle } amps={ amps } file={ file } timestamps={ timestamps } setTimestamps={ setTimestamps } setFile={ setFile } fileName={ fileName } /> : <Dropzone file={ file } setAmps={ setAmps } setFileName={ setFileName } setFile={ setFile } sendFile={ sendFile } accept={ "uploads/*" } /> }
         </div> : <div> Not Authorized </div> }
         </>
         )

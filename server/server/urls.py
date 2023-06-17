@@ -86,7 +86,7 @@ def getUserLib(request):
 
         req_file = file_collection.find_one({ "file_hash": file_hash })
 
-        toSend["files"].append({ "id": i, "file_name": req_file["file_name"], "user_named": user_named, "alternate_names": req_file["alternate_names"] })
+        toSend["files"].append({"file_name": req_file["file_name"], "user_named": user_named, "alternate_names": req_file["alternate_names"], "hash": req_file["file_hash"] })
 
         i += 1
 
@@ -94,13 +94,21 @@ def getUserLib(request):
 
     return reponse
 
+@require_GET
+def getFile(request):
+    hash = request.GET.get("hash")
+    req_file = file_collection.find_one({ "file_hash": hash })
+    del req_file["_id"]
+    return HttpResponse(json.dumps(req_file), content_type = "application/json")
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path("api/convert/", include("convertor.urls")),
     path('api/register/', register, name = 'register'),
     path('api/login/', login, name = 'login'),
     path('api/verify/', verify, name = 'verify'),
-    path("api/getuserlib", getUserLib, name = 'getuserlib')
+    path("api/getuserlib", getUserLib, name = 'getuserlib'),
+    path("api/getfile/", getFile, name = 'getfile')
 ]
 
 # urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
