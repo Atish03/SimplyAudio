@@ -180,7 +180,7 @@ const CustomAudio = ({ file, toggle, setToggle, amps, timestamps, setTimestamps,
         let allStamp = { ...timestamps }
         let key = e.target.parentElement.getAttribute("value")
         if (allStamp[key] != undefined) {
-            allStamp[key]["annotation"] = document.getElementById("annotationPlace").value;
+            allStamp[key]["annotation"] = document.getElementById("annotationPlace").innerHTML;
             setTimestamps(allStamp);
             toast.success("Done!");
         } else {
@@ -244,7 +244,7 @@ const CustomAudio = ({ file, toggle, setToggle, amps, timestamps, setTimestamps,
                     <hr style={{ width: "95%" }}></hr>
                     <div id="annotation-container" value={ selectedTime } className={ style.cont } style={{ padding: "10px 10px 10px 10px" }}>
                         <p className={ style.annoTime }>{ selectedTime ? new Date(selectedTime * 1000).toISOString().slice(11, 19) : "No time selected" }</p>
-                        <textarea value={ timestamps[selectedTime] ? timestamps[selectedTime].annotation : "" } id="annotationPlace" className={ style.annotationArea }></textarea>
+                        <div id="annotationPlace" className={ style.annotationArea } contentEditable>{timestamps[selectedTime] ? timestamps[selectedTime].annotation : ""}</div>
                         <button className={ style.putAnnotation } onClick={ addAnnotation }>Save Tag & Annotation</button>
                     </div>
                 </div>
