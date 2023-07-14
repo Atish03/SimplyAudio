@@ -4,7 +4,6 @@ import PlayArrowRoundedIcon from '@mui/icons-material/PlayArrowRounded';
 import PauseRoundedIcon from '@mui/icons-material/PauseRounded';
 import Dropzone from "./Dropzone";
 import Cookies from "universal-cookie";
-import Library from "./Library";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -218,6 +217,7 @@ const CustomAudio = ({ file, toggle, setToggle, amps, timestamps, setTimestamps,
 
     return (
         <>
+            <div>{new Date((500 - left) * 50).toISOString().slice(11, 19)}</div>
             <div className={ style.container }>
                 <Scroller amps={ amps } toggle={ toggle } audio={ audio } setToggle={ setToggle } timestamps={ timestamps } setTimestamps={ setTimestamps } left={ left } setLeft= { setLeft } />
             </div>
