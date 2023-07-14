@@ -21,7 +21,7 @@ const Library = ({ file, setAmps, setFileName, setFile }) => {
             return resp.json();
         }).then((data) => {
             setAmps(data.amps);
-            setFileName(data.file_name + ".wav");
+            setFileName(data.file_name + ".ogg");
             setFile(1);
         }), {
             pending: "Loading file...",

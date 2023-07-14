@@ -55,9 +55,9 @@ def index(request):
 
             open(f"{save_path}{tmpName}", "wb").write(byteData)
 
-            subprocess.run(["ffmpeg", "-i", f"{save_path}{tmpName}", "-ab", "1000k", "-vn", f"{save_path}{tmpName}.wav"])
+            subprocess.run(["ffmpeg", "-i", f"{save_path}{tmpName}", "-ab", "64k", "-vn", f"{save_path}{tmpName}.ogg"])
             os.remove(f"{save_path}{tmpName}")
-            amps = genWave.getWave(f"{save_path}{tmpName}.wav")
+            amps = genWave.getWave(f"{save_path}{tmpName}.ogg")
 
             file_collection.insert_one({ "file_name": tmpName, "file_hash": fileHash, "amps": amps, "alternate_names": [original_file_name] })
         else:
@@ -67,7 +67,7 @@ def index(request):
             tmpName = exists["file_name"]
             amps = exists["amps"]
 
-        return HttpResponse(json.dumps({ "amps": amps, "fileName": f"{tmpName}.wav" }), content_type = "application/json")
+        return HttpResponse(json.dumps({ "amps": amps, "fileName": f"{tmpName}.ogg" }), content_type = "application/json")
 
     else:
         return HttpResponse("Nothing to see here ;)")
